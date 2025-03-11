@@ -1,64 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black & Scholes Option Pricing</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff7e5f">
-    <link rel="icon" href="icon.png">
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js').then(() => {
-                console.log('Service Worker Registered');
-            }).catch(err => console.error('Service Worker Registration Failed:', err));
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        function normalCDF(x) {
+            return (1.0 + Math.erf(x / Math.sqrt(2.0))) / 2.0;
         }
-    </script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            color: white;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+
+        function calculateOptions() {
+            let S = parseFloat(document.getElementById("spot").value);
+            let K = parseFloat(document.getElementById("strike").value);
+            let expiry = new Date(document.getElementById("expiry").value);
+            let T = (expiry - new Date()) / (365 * 24 * 60 * 60 * 1000);
+            let sigma = parseFloat(document.getElementById("volatility").value) / 100;
+            let r = parseFloat(document.getElementById("interest").value) / 100;
+            let q = parseFloat(document.getElementById("dividend").value) / 100;
+            
+            if (isNaN(S) || isNaN(K) || isNaN(T) || isNaN(sigma) || isNaN(r) || isNaN(q)) {
+                document.getElementById("result").innerText = "Please enter valid inputs";
+                return;
+            }
+            
+            let d1 = (Math.log(S / K) + (r - q + 0.5 * (sigma ** 2)) * T) / (sigma * Math.sqrt(T));
+            let d2 = d1 - sigma * Math.sqrt(T);
+            let Nd1 = normalCDF(d1);
+            let Nd2 = normalCDF(d2);
+            let Nnegd1 = normalCDF(-d1);
+            let Nnegd2 = normalCDF(-d2);
+            
+            let callPrice = S * Math.exp(-q * T) * Nd1 - K * Math.exp(-r * T) * Nd2;
+            let putPrice = K * Math.exp(-r * T) * Nnegd2 - S * Math.exp(-q * T) * Nnegd1;
+            
+            document.getElementById("result").innerHTML = `
+                <div><b>Call Option</b><br>Premium: ${callPrice.toFixed(4)}<br>d1: ${d1.toFixed(4)}<br>d2: ${d2.toFixed(4)}</div>
+                <div><b>Put Option</b><br>Premium: ${putPrice.toFixed(4)}<br>d1: ${d1.toFixed(4)}<br>d2: ${d2.toFixed(4)}</div>
+            `;
         }
-        .container {
-            width: 90%;
-            max-width: 600px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-        }
-        button {
-            background: #ffcc00;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Black & Scholes Option Pricing</h2>
-        <input type="number" id="spot" placeholder="Spot Price">
-        <input type="number" id="strike" placeholder="Strike Price">
-        <input type="date" id="expiry">
-        <input type="number" id="volatility" placeholder="Volatility (%)">
-        <input type="number" id="interest" placeholder="Interest Rate (%)">
-        <input type="number" id="dividend" placeholder="Dividend Yield (%)">
-        <button onclick="calculateOptions()">Calculate</button>
-        <div id="result"></div>
-    </div>
-    <script src="app.js"></script>
-</body>
-</html>
+
+        document.getElementById("calculateButton").addEventListener("click", calculateOptions);
+    });
+</script>
